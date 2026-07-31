@@ -1,0 +1,26 @@
+FROM python:3.12-slim
+
+ENV POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH="/app"
+
+ENV PATH="$POETRY_HOME/bin:$PATH"
+
+RUN pip install --no-cache-dir "poetry==2.2.0"
+
+WORKDIR /app/migrations
+
+COPY migrations/pyproject.toml migrations/poetry.lock ./
+RUN poetry install --no-root
+
+COPY migrations/ ./
+COPY alembic.ini /app/alembic.ini
+
+RUN mkdir -p /app/src
+COPY src/domain/tickers.py /app/src/domain/tickers.py
+COPY src/config.py /app/src/config.py
+
+CMD ["poetry", "run", "alembic", "-c", "/app/alembic.ini", "upgrade", "head"]

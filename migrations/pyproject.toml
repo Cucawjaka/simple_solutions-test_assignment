@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "simplesolutionstestassignment-migrations"
+version = "0.1.0"
+description = "Alembic migrations"
+authors = [""]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+alembic = "^1.18.4"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.48"}
+asyncpg = "^0.31.0"
+pydantic-settings = "^2.13.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
