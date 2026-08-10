@@ -6,8 +6,10 @@ import structlog
 
 from application.dto.price_record import PriceRecordDTO
 from application.interfaces.deribit_client import IDeribitAPIClient
+from application.interfaces.latest_price_cache import ILatestPriceCache
 from application.interfaces.price_record_repository import IPriceRecordRepository
 from domain.tickers import Ticker
+from errors.application import IntegrationError
 
 logger = structlog.get_logger(__name__)
 
@@ -18,10 +20,12 @@ class PricePollUseCase:
     def __init__(
         self,
         repo: IPriceRecordRepository,
+        cache: ILatestPriceCache,
         api_client: IDeribitAPIClient,
         supported_tickets: set[Ticker],
     ) -> None:
         self._repo = repo
+        self._cache = cache
         self._api_client = api_client
         self._supported_tickers = supported_tickets
 
@@ -59,3 +63,13 @@ class PricePollUseCase:
         logger.info("Записи о цене успешно получены")
         await self._repo.add_records(records)
         logger.info("Записи о цене успешно сохранены")
+
+        for record in records:
+            try:
+                await self._cache.set_latest_price(record)
+            except IntegrationError as e:
+                logger.warning(
+                    "Не удалось обновить кэш последней цены",
+                    error=str(e),
+                    ticker=record.ticker.value,
+                )
